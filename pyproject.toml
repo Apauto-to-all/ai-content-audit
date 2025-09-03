@@ -1,0 +1,24 @@
+[project]
+name = "ai-content-audit"
+version = "0.1.0"
+description = "Add your description here"
+authors = [{ name = "Apauto-to-all", email = "apautotoall@outlook.com" }]
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["openai>=1.102.0", "pydantic>=2.11.7", "python-dotenv>=1.1.1"]
+
+# 主要使用清华源
+[[tool.uv.index]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+# 添加阿里云备用源
+[[tool.uv.index]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+
+# 最后默认源
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
