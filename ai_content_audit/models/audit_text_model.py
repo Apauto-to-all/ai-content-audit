@@ -20,10 +20,3 @@ class AuditText(BaseModel):
         default=None, description="文本来源（文件路径/URL 等）"
     )
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="额外元信息")
-
-    @field_validator("content")
-    @classmethod
-    def _validate_content(cls, v: str) -> str:
-        if not isinstance(v, str) or not v.strip():
-            raise ValueError("content 不能为空")
-        return v
