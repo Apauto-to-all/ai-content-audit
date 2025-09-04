@@ -80,11 +80,8 @@ class AuditManager:
         返回：
         - AuditDecision: 审核决策结果。
         """
-        # 解析内容
-        audit_content = content.content
-
         # 构建消息
-        messages = build_messages(audit_content, item)
+        messages = build_messages(content=content, item=item)
 
         # 选择客户端与模型（允许方法级覆盖）
         use_client = client or self.client
