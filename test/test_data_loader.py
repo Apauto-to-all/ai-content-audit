@@ -4,11 +4,8 @@ import tempfile
 from pathlib import Path
 from pydantic import ValidationError
 
-from ai_content_audit.loader.data_loader import (
-    AuditTextLoader,
-    _read_and_normalize_text,
-)
-from ai_content_audit.models import AuditText
+from ai_content_audit.loader.data_loader import AuditContentLoader
+from ai_content_audit.models import AuditContent
 
 
 class TestAuditTextLoader:
@@ -20,9 +17,9 @@ class TestAuditTextLoader:
         source = "test_source"
         metadata = {"key": "value"}
 
-        text = AuditTextLoader.create(content, source=source, metadata=metadata)
+        text = AuditContentLoader.create(content, source=source, metadata=metadata)
 
-        assert isinstance(text, AuditText)
+        assert isinstance(text, AuditContent)
         assert text.content == content
         assert text.source == source
         assert text.metadata == metadata
@@ -31,7 +28,7 @@ class TestAuditTextLoader:
         """测试 create 方法最小参数"""
         content = "测试文本"
 
-        text = AuditTextLoader.create(content)
+        text = AuditContentLoader.create(content)
 
         assert text.content == content
         assert text.source is None
@@ -45,9 +42,9 @@ class TestAuditTextLoader:
             "metadata": {"key": "value"},
         }
 
-        text = AuditTextLoader.from_dict(data)
+        text = AuditContentLoader.from_dict(data)
 
-        assert isinstance(text, AuditText)
+        assert isinstance(text, AuditContent)
         assert text.content == data["content"]
         assert text.source == data["source"]
         assert text.metadata == data["metadata"]
@@ -56,7 +53,7 @@ class TestAuditTextLoader:
         """测试 from_dict 方法最小字段"""
         data = {"content": "测试文本"}
 
-        text = AuditTextLoader.from_dict(data)
+        text = AuditContentLoader.from_dict(data)
 
         assert text.content == data["content"]
         assert text.source is None
@@ -66,7 +63,7 @@ class TestAuditTextLoader:
         """测试 from_dict 方法 metadata 类型错误"""
         data = {"content": "测试文本", "metadata": "invalid"}
 
-        text = AuditTextLoader.from_dict(data)
+        text = AuditContentLoader.from_dict(data)
 
         # metadata 应被设为 None
         assert text.metadata is None
@@ -76,7 +73,7 @@ class TestAuditTextLoader:
         data = {"source": "test"}
 
         with pytest.raises(ValidationError):
-            AuditTextLoader.from_dict(data)
+            AuditContentLoader.from_dict(data)
 
     def test_from_file_success(self):
         """测试 from_file 方法正常加载"""
@@ -89,9 +86,9 @@ class TestAuditTextLoader:
             temp_path = Path(f.name)
 
         try:
-            text = AuditTextLoader.from_file(temp_path)
+            text = AuditContentLoader.from_file(temp_path)
 
-            assert isinstance(text, AuditText)
+            assert isinstance(text, AuditContent)
             assert text.content == content.replace("\r\n", "\n").replace("\r", "\n")
             assert text.source == str(temp_path)
         finally:
@@ -102,7 +99,7 @@ class TestAuditTextLoader:
         non_existent_path = Path("non_existent.txt")
 
         with pytest.raises(FileNotFoundError):
-            AuditTextLoader.from_file(non_existent_path)
+            AuditContentLoader.from_file(non_existent_path)
 
     def test_from_file_unsupported_type(self):
         """测试 from_file 方法不支持的文件类型"""
@@ -112,7 +109,7 @@ class TestAuditTextLoader:
 
         try:
             with pytest.raises(ValueError, match="不支持的文件类型"):
-                AuditTextLoader.from_file(temp_path)
+                AuditContentLoader.from_file(temp_path)
         finally:
             temp_path.unlink()
 
@@ -127,7 +124,7 @@ class TestAuditTextLoader:
             temp_path = Path(f.name)
 
         try:
-            texts = AuditTextLoader.from_path(temp_path)
+            texts = AuditContentLoader.from_path(temp_path)
 
             assert len(texts) == 1
             assert texts[0].content == content
@@ -144,7 +141,7 @@ class TestAuditTextLoader:
             file1.write_text("内容1", encoding="utf-8")
             file2.write_text("内容2", encoding="utf-8")
 
-            texts = AuditTextLoader.from_path(temp_path)
+            texts = AuditContentLoader.from_path(temp_path)
 
             assert len(texts) == 2
             sources = [t.source for t in texts]
@@ -162,7 +159,7 @@ class TestAuditTextLoader:
             file1.write_text("内容1", encoding="utf-8")
             file2.write_text("内容2", encoding="utf-8")
 
-            texts = AuditTextLoader.from_path(temp_path, recursive=False)
+            texts = AuditContentLoader.from_path(temp_path, recursive=False)
 
             assert len(texts) == 1
             assert texts[0].source == str(file1)
@@ -176,23 +173,6 @@ class TestAuditTextLoader:
             file1.write_text("内容1", encoding="utf-8")
             file2.write_text("内容2", encoding="utf-8")
 
-            texts = AuditTextLoader.from_paths([file1, file2])
+            texts = AuditContentLoader.from_paths([file1, file2])
 
             assert len(texts) == 2
-
-    def test_read_and_normalize_text(self):
-        """测试 _read_and_normalize_text 函数"""
-        content = "line1\nline2\nline3\n"
-
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(content)
-            temp_path = Path(f.name)
-
-        try:
-            normalized = _read_and_normalize_text(temp_path)
-
-            assert normalized == "line1\nline2\nline3\n"
-        finally:
-            temp_path.unlink()

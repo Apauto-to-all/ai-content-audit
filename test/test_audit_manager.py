@@ -1,9 +1,8 @@
 import pytest
-from unittest.mock import Mock, MagicMock
 from ai_content_audit.audit_manager import AuditManager, _ensure_choice
 from ai_content_audit.models import (
     AuditOptionsItem,
-    AuditText,
+    AuditContent,
     AuditDecision,
     AuditResult,
 )
@@ -37,11 +36,11 @@ class TestAuditManager:
     """测试 AuditManager 类"""
 
     @pytest.fixture
-    def mock_client(self):
+    def mock_client(self, mocker):
         """模拟 OpenAI 客户端"""
-        client = Mock()
-        mock_response = Mock()
-        mock_choice = Mock()
+        client = mocker.Mock()
+        mock_response = mocker.Mock()
+        mock_choice = mocker.Mock()
         mock_choice.message.parsed = AuditDecision(choice="有", reason="测试理由")
         mock_response.choices = [mock_choice]
         client.chat.completions.parse.return_value = mock_response
@@ -54,8 +53,8 @@ class TestAuditManager:
 
     @pytest.fixture
     def sample_text(self):
-        """示例 AuditText"""
-        return AuditText(content="测试文本", source="test")
+        """示例 AuditContent"""
+        return AuditContent(content="测试文本", source="test", file_type="text")
 
     @pytest.fixture
     def sample_item(self):
@@ -86,13 +85,17 @@ class TestAuditManager:
         mock_client.chat.completions.parse.assert_called_once()
 
     def test_audit_one_with_overrides(
-        self, manager, sample_text, sample_item, mock_client
+        self, manager, sample_text, sample_item, mock_client, mocker
     ):
         """测试 audit_one 带覆盖参数"""
-        override_client = Mock()
-        override_client.chat.completions.parse.return_value = Mock(
+        override_client = mocker.Mock()
+        override_client.chat.completions.parse.return_value = mocker.Mock(
             choices=[
-                Mock(message=Mock(parsed=AuditDecision(choice="无", reason="覆盖理由")))
+                mocker.Mock(
+                    message=mocker.Mock(
+                        parsed=AuditDecision(choice="无", reason="覆盖理由")
+                    )
+                )
             ]
         )
 
@@ -120,10 +123,10 @@ class TestAuditManager:
         assert result.text_id == sample_text.id
         assert result.item_id == sample_item.id
 
-    def test_audit_batch_multiple(self, manager, mock_client):
+    def test_audit_batch_multiple(self, manager, mock_client, mocker):
         """测试 audit_batch 多个文本和项"""
-        text1 = AuditText(content="文本1")
-        text2 = AuditText(content="文本2")
+        text1 = AuditContent(content="文本1", file_type="text")
+        text2 = AuditContent(content="文本2", file_type="text")
         item1 = AuditOptionsItem(
             name="项1", instruction="指令1", options={"有": "desc"}
         )
@@ -133,31 +136,39 @@ class TestAuditManager:
 
         # 模拟不同响应
         responses = [
-            Mock(
+            mocker.Mock(
                 choices=[
-                    Mock(
-                        message=Mock(parsed=AuditDecision(choice="有", reason="理由1"))
+                    mocker.Mock(
+                        message=mocker.Mock(
+                            parsed=AuditDecision(choice="有", reason="理由1")
+                        )
                     )
                 ]
             ),
-            Mock(
+            mocker.Mock(
                 choices=[
-                    Mock(
-                        message=Mock(parsed=AuditDecision(choice="无", reason="理由2"))
+                    mocker.Mock(
+                        message=mocker.Mock(
+                            parsed=AuditDecision(choice="无", reason="理由2")
+                        )
                     )
                 ]
             ),
-            Mock(
+            mocker.Mock(
                 choices=[
-                    Mock(
-                        message=Mock(parsed=AuditDecision(choice="有", reason="理由3"))
+                    mocker.Mock(
+                        message=mocker.Mock(
+                            parsed=AuditDecision(choice="有", reason="理由3")
+                        )
                     )
                 ]
             ),
-            Mock(
+            mocker.Mock(
                 choices=[
-                    Mock(
-                        message=Mock(parsed=AuditDecision(choice="无", reason="理由4"))
+                    mocker.Mock(
+                        message=mocker.Mock(
+                            parsed=AuditDecision(choice="无", reason="理由4")
+                        )
                     )
                 ]
             ),
@@ -184,12 +195,18 @@ class TestAuditManager:
         assert result.decision.choice == "有"  # 兜底选择
         assert result.decision.reason == "模型调用失败"
 
-    def test_audit_batch_with_overrides(self, manager, sample_text, sample_item):
+    def test_audit_batch_with_overrides(
+        self, manager, sample_text, sample_item, mocker
+    ):
         """测试 audit_batch 带覆盖参数"""
-        override_client = Mock()
-        override_client.chat.completions.parse.return_value = Mock(
+        override_client = mocker.Mock()
+        override_client.chat.completions.parse.return_value = mocker.Mock(
             choices=[
-                Mock(message=Mock(parsed=AuditDecision(choice="无", reason="覆盖理由")))
+                mocker.Mock(
+                    message=mocker.Mock(
+                        parsed=AuditDecision(choice="无", reason="覆盖理由")
+                    )
+                )
             ]
         )
 
