@@ -1,7 +1,7 @@
 [project]
 name = "ai-content-audit"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "基于大语言模型（LLM）的内容审核工具，支持文本与图像，自定义审核项配置，调用模型获得结构化判定结果，使用 OpenAI 兼容接口"
 authors = [{ name = "Apauto-to-all", email = "apautotoall@outlook.com" }]
 license = "Apache-2.0"
 readme = "README.md"
@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 # 添加项目链接
-urls = { "Homepage" = "https://github.com/Apauto-to-all/ai-content-audit" }
+urls = { Homepage = "https://github.com/Apauto-to-all/ai-content-audit" }
 
 [dependency-groups]
 dev = ["pytest>=8.4.1", "pytest-mock>=3.14.1"]
