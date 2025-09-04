@@ -4,7 +4,7 @@ from openai import OpenAI
 from ai_content_audit.models import (
     AuditOptionsItem,
     AuditDecision,
-    AuditText,
+    AuditContent,
     AuditResult,
 )
 from ai_content_audit.prompts import build_messages
@@ -37,7 +37,7 @@ def _ensure_choice(choice: str | None, options: Dict[str, str]) -> str:
 
 class AuditManager:
     """
-    审核管理器（类管理模式）
+    审核管理器
 
     职责：
     - 管理与大模型的交互（持有 client 与默认 model）。
@@ -60,19 +60,19 @@ class AuditManager:
         self.client = client
         self.model = model
 
-    def _audit_text_with_item(
+    def _audit_content_with_item(
         self,
-        text: AuditText,
+        content: AuditContent,
         item: AuditOptionsItem,
         *,
         client: Optional[OpenAI] = None,
         model: Optional[str] = None,
     ) -> AuditDecision:
         """
-        内部方法：审核单个文本与单个审核项，返回 AuditDecision。
+        内部方法：审核单个待审核内容与单个审核项，返回 AuditDecision。
 
         参数：
-        - text (AuditText): 待审核文本。
+        - content (AuditContent): 待审核内容。
         - item (AuditOptionsItem): 审核项。
         - client (Optional[OpenAI]): 可选覆盖客户端。
         - model (Optional[str]): 可选覆盖模型。
@@ -80,11 +80,11 @@ class AuditManager:
         返回：
         - AuditDecision: 审核决策结果。
         """
-        # 解析文本内容
-        content = text.content
+        # 解析内容
+        audit_content = content.content
 
         # 构建消息
-        messages = build_messages(content, item)
+        messages = build_messages(audit_content, item)
 
         # 选择客户端与模型（允许方法级覆盖）
         use_client = client or self.client
@@ -105,17 +105,17 @@ class AuditManager:
 
     def audit_one(
         self,
-        text: AuditText,
+        content: AuditContent,
         item: AuditOptionsItem,
         *,
         client: Optional[OpenAI] = None,
         model: Optional[str] = None,
     ) -> AuditResult:
         """
-        审核单个文本与单个审核项。
+        审核单个内容与单个审核项。
 
         参数：
-        - text (AuditText): 待审核文本，AuditText模型
+        - content (AuditContent): 待审核内容，AuditContent模型
         - item (AuditOptionsItem): 审核项定义，AuditOptionsItem模型
         - client (Optional[OpenAI]): 可选覆盖客户端。
         - model (Optional[str]): 可选覆盖模型。
@@ -128,7 +128,7 @@ class AuditManager:
         >>> from openai import OpenAI
         >>> client = OpenAI(base_url="https:/", api_key="your_api_key")
         >>> manager = AuditManager(client, model="qwen-plus")
-        >>> text = loader.audit_data.create(content="这是一个示例文本，用于演示审核功能。")
+        >>> content = loader.audit_data.create(content="这是一个示例文本，用于演示审核功能。")
         >>> item = loader.options_item.create(
         ...     name="是否包含敏感信息",
         ...     instruction="检查文本中是否出现用户定义的敏感信息（如个人隐私、密钥、内网地址等）。",
@@ -138,7 +138,7 @@ class AuditManager:
         ...         "不确定": "无法判断是否含有敏感信息",
         ...     }
         ... )
-        >>> result = manager.audit_one(text, item)
+        >>> result = manager.audit_one(content, item)
         >>> print("审核结果：")
         >>> print("=" * 60)
         >>> print(f"审核项: {result.item_name}")
@@ -148,32 +148,34 @@ class AuditManager:
         >>> print("=" * 60)
         """
         # 获取审核决策
-        decision = self._audit_text_with_item(text, item, client=client, model=model)
+        decision = self._audit_content_with_item(
+            content, item, client=client, model=model
+        )
 
         # 构建 AuditResult
         result = AuditResult(
-            text_id=text.id,
+            text_id=content.id,
             item_id=item.id,
             item_name=item.name,
-            text_excerpt=text.content,
+            text_excerpt=content.content,
             decision=decision,
         )
         return result
 
     def audit_batch(
         self,
-        text: List[AuditText],
+        content: List[AuditContent],
         items: List[AuditOptionsItem],
         *,
         client: Optional[OpenAI] = None,
         model: Optional[str] = None,
     ) -> List[AuditResult]:
         """
-        批量审核：对多个文本依次应用多个审核项。
+        批量审核：对多个内容依次应用多个审核项。
 
         参数：
-        - text (List[AuditText]): 待审核文本列表，每个文本将应用所有审核项。
-        - items (List[AuditOptionsItem]): 审核项列表，对每个文本依次应用。
+        - content (List[AuditContent]): 待审核内容列表，每个内容将应用所有审核项。
+        - items (List[AuditOptionsItem]): 审核项列表，对每个内容依次应用。
         - client (Optional[OpenAI]): 可选覆盖客户端。
         - model (Optional[str]): 可选覆盖模型。
 
@@ -189,7 +191,7 @@ class AuditManager:
         >>> from openai import OpenAI
         >>> client = OpenAI(base_url="https:/", api_key="your_api_key")
         >>> manager = AuditManager(client, model="qwen-plus")
-        >>> texts = [
+        >>> contents = [
         ...     loader.audit_data.create(content="文本1"),
         ...     loader.audit_data.create(content="文本2")
         ... ]
@@ -197,12 +199,12 @@ class AuditManager:
         ...     loader.options_item.create(name="审核项1", instruction="指令1", options={"通过": "说明", "不通过": "说明"}),
         ...     loader.options_item.create(name="审核项2", instruction="指令2", options={"通过": "说明", "不通过": "说明"})
         ... ]
-        >>> results = manager.audit_batch(texts, items)
+        >>> results = manager.audit_batch(contents, items)
         >>> # 打印批量结果
         >>> for i, res in enumerate(results, 1):
         ...     print(f"结果 {i}:")
         ...     print(f"  审核项: {res.item_name}")
-        ...     print(f"  文本节选: {res.text_excerpt}...")
+        ...     print(f"  内容节选: {res.text_excerpt}...")
         ...     print(f"  决策: {res.decision.choice}")
         ...     print(f"  理由: {res.decision.reason}")
         ...     print("-" * 40)
@@ -212,18 +214,18 @@ class AuditManager:
         batch_id = uuid4()
         results: List[AuditResult] = []
 
-        for t in text:
+        for c in content:
             for it in items:
                 try:
-                    decision = self._audit_text_with_item(
-                        t, it, client=client, model=model
+                    decision = self._audit_content_with_item(
+                        c, it, client=client, model=model
                     )
                     result = AuditResult(
                         batch_id=batch_id,
-                        text_id=t.id,
+                        text_id=c.id,
                         item_id=it.id,
                         item_name=it.name,
-                        text_excerpt=t.content,
+                        text_excerpt=c.content,
                         decision=decision,
                     )
                     results.append(result)
@@ -235,10 +237,10 @@ class AuditManager:
                     )
                     result = AuditResult(
                         batch_id=batch_id,
-                        text_id=t.id,
+                        text_id=c.id,
                         item_id=it.id,
                         item_name=it.name,
-                        text_excerpt=t.content,
+                        text_excerpt=c.content,
                         decision=fallback_decision,
                     )
                     results.append(result)

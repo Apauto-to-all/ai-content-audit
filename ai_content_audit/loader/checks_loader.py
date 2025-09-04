@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
-
 import json
 from pydantic import ValidationError
-
 from ai_content_audit.models import AuditOptionsItem
 
 
