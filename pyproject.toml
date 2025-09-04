@@ -6,13 +6,18 @@ authors = [{ name = "Apauto-to-all", email = "apautotoall@outlook.com" }]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["openai>=1.102.0", "pydantic>=2.11.7", "python-dotenv>=1.1.1"]
+dependencies = [
+    "filetype>=1.2.0",
+    "openai>=1.102.0",
+    "pydantic>=2.11.7",
+    "python-dotenv>=1.1.1",
+]
 
 # 添加项目链接
 urls = { "Homepage" = "https://github.com/Apauto-to-all/ai-content-audit" }
 
 [dependency-groups]
-dev = ["pytest>=8.4.1"]
+dev = ["pytest>=8.4.1", "pytest-mock>=3.14.1"]
 
 # 发布testpypi
 [[tool.uv.index]]
