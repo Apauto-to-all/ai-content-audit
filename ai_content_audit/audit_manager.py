@@ -1,11 +1,6 @@
 from typing import List, Optional
 
-# 在模块导入时检查 openai 包是否安装
-try:
-    from openai import OpenAI
-except ImportError:
-    raise ImportError("openai 包未安装，请安装：pip install openai")
-
+from openai import OpenAI
 from uuid import uuid4
 from ai_content_audit.models import (
     AuditOptionsItem,
@@ -28,7 +23,7 @@ class AuditManager:
 
     def __init__(
         self,
-        client: Optional["OpenAI"] = None,
+        client: Optional[OpenAI] = None,
         model: Optional[str] = None,
     ) -> None:
         """
@@ -50,7 +45,7 @@ class AuditManager:
         content: AuditContent,
         item: AuditOptionsItem,
         *,
-        client: Optional["OpenAI"] = None,
+        client: Optional[OpenAI] = None,
         model: Optional[str] = None,
     ) -> AuditDecision:
         """
@@ -95,7 +90,7 @@ class AuditManager:
         content: AuditContent,
         item: AuditOptionsItem,
         *,
-        client: Optional["OpenAI"] = None,
+        client: Optional[OpenAI] = None,
         model: Optional[str] = None,
     ) -> AuditResult:
         """
@@ -154,7 +149,7 @@ class AuditManager:
         content: List[AuditContent],
         items: List[AuditOptionsItem],
         *,
-        client: Optional["OpenAI"] = None,
+        client: Optional[OpenAI] = None,
         model: Optional[str] = None,
     ) -> List[AuditResult]:
         """
