@@ -10,31 +10,6 @@ from ai_content_audit.models import (
 from ai_content_audit.prompts import build_messages
 
 
-def _ensure_choice(choice: str | None, options: Dict[str, str]) -> str:
-    """
-    规范化审核结果的选择项，确保其在允许的选项范围内。
-
-    此函数用于处理大模型输出的 choice 字段，可能存在拼写错误或不在选项中的情况。
-    优先匹配精确选项，其次尝试匹配“不确定”类标签，最后回退到第一个选项。
-
-    参数：
-    - choice (str | None): 模型输出的原始选择项，可能为 None 或无效值。
-    - options (Dict[str, str]): 审核项的选项映射，键为选项标签，值为说明。
-
-    返回：
-    - str: 规范化后的选择项，保证在 options 的键中。
-
-    """
-    if choice and choice in options:
-        return choice
-    # 尝试回退到“不确定”类标签
-    for k in options.keys():
-        if k in ("不确定", "无法判断", "Uncertain", "Unknown"):
-            return k
-    # 否则回退到第一个选项
-    return next(iter(options.keys()))
-
-
 class AuditManager:
     """
     审核管理器
@@ -45,13 +20,13 @@ class AuditManager:
     - 支持批量审核，提高处理效率。
     """
 
-    def __init__(self, client: OpenAI, model: str) -> None:
+    def __init__(self, client: OpenAI = None, model: str = None) -> None:
         """
         初始化审核管理器。
 
         参数：
-        - client (OpenAI): OpenAI 兼容客户端，用于与大模型交互。应已配置 base_url 与 api_key。
-        - model (str): 默认模型名称，方法调用时可临时覆盖。需与客户端兼容。
+        - client (OpenAI, optional): 默认 OpenAI 兼容客户端，用于与大模型交互，方法调用时可临时覆盖。默认值为 None。
+        - model (str, optional): 默认模型名称，方法调用时可临时覆盖，需与客户端兼容。默认值为 None。
 
         使用场景：
         - 单文本审核：调用 audit_one 对单个文本应用单个审核项。
@@ -80,12 +55,20 @@ class AuditManager:
         返回：
         - AuditDecision: 审核决策结果。
         """
-        # 构建消息
-        messages = build_messages(content=content, item=item)
-
         # 选择客户端与模型（允许方法级覆盖）
         use_client = client or self.client
+        if not use_client:
+            raise ValueError(
+                "客户端未指定，无法执行审核。请在初始化时指定默认客户端，或在方法调用时指定 client 参数。"
+            )
         use_model = model or self.model
+        if not use_model:
+            raise ValueError(
+                "模型未指定，无法执行审核。请在初始化时指定默认模型，或在方法调用时指定 model 参数。"
+            )
+
+        # 构建消息
+        messages = build_messages(content=content, item=item)
 
         # 结构化输出（优先使用 parse -> Pydantic）
         resp = use_client.chat.completions.parse(
@@ -95,9 +78,6 @@ class AuditManager:
         )
         result: AuditDecision = resp.choices[0].message.parsed
 
-        # 结果兜底与清洗
-        result.choice = _ensure_choice(result.choice, item.options)
-        result.reason = (result.reason or "").strip() or "基于文本与选项说明给出的判定"
         return result
 
     def audit_one(
@@ -229,7 +209,7 @@ class AuditManager:
                 except Exception:
                     # 失败时创建兜底结果
                     fallback_decision = AuditDecision(
-                        choice=_ensure_choice(None, it.options),
+                        choice="Error",
                         reason="模型调用失败",
                     )
                     result = AuditResult(

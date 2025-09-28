@@ -12,12 +12,14 @@ AI 内容审核系统
 使用示例：
 >>> from openai import OpenAI
 >>> from ai_content_audit import AuditManager, loader, file_loader
->>>
+>>> 
 >>> # 创建 OpenAI 客户端
 >>> client = OpenAI()
->>>
->>> # 创建审核管理器 - 文本审核
->>> text_audit_manager = AuditManager(client=client, model="qwen-plus")
+>>> 
+>>> # 创建审核管理器
+>>> audit_manager = AuditManager(client=client)
+>>> 
+>>> # 文本审核
 >>> # 加载审核文本
 >>> text_audit_content = loader.audit_data.create(content="待审核文本", file_type="text")
 >>> # 加载审核项
@@ -27,10 +29,13 @@ AI 内容审核系统
 ...     options={"选项1": "说明", "选项2": "说明"},
 ... )
 >>> # 执行文本审核
->>> text_result = text_audit_manager.audit_one(text_audit_content, text_audit_item)
->>>
->>> # 创建审核管理器 - 图像审核
->>> image_audit_manager = AuditManager(client=client, model="qwen-vl-plus")
+>>> text_result = audit_manager.audit_one(
+...     content=text_audit_content,
+...     item=text_audit_item,
+...     model="qwen-plus",
+... )
+>>> 
+>>> # 图像审核
 >>> # 加载图像文件，将其转化为大模型图像输入格式
 >>> image_data = file_loader.load_image("path/to/image.jpg")
 >>> # 加载图像审核内容
@@ -41,8 +46,12 @@ AI 内容审核系统
 ...     instruction="审核指令 - 图像",
 ...     options={"选项1": "说明", "选项2": "说明"},
 ... )
->>> # 执行图像审核
->>> image_result = image_audit_manager.audit_one(image_audit_content, image_audit_item)
+>>> # 执行图像审核，需要指定支持图像理解的大模型，如 qwen-vl-plus
+>>> image_result = audit_manager.audit_one(
+...     content=image_audit_content,
+...     item=image_audit_item,
+...     model="qwen-vl-plus",
+... )
 """
 
 from ai_content_audit.audit_manager import AuditManager
