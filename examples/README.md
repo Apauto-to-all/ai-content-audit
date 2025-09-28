@@ -2,6 +2,19 @@
 
 这个目录包含了 AI 内容审核系统的各种使用示例，按功能分类组织。
 
+## 项目结构更新说明
+
+项目已重新组织为标准的 Python 包结构，主要模块位于 `ai_content_audit` 目录下：
+
+- **`ai_content_audit/`**: 主包目录
+  - **`__init__.py`**: 包初始化文件，导出主要功能
+  - **`audit_manager.py`**: 审核管理器核心功能
+  - **`loader/`**: 数据加载器模块
+    - **`data_loader.py`**: 审核内容数据加载器
+    - **`checks_loader.py`**: 审核项加载器
+  - **`file_loader/`**: 文件加载器模块
+    - **`image_loader.py`**: 图像文件加载功能
+
 ## 示例文件说明
 
 ### 基础示例
@@ -11,21 +24,13 @@
   - 敏感信息检测
   - 广告内容检测
 
-### 文件操作示例
-
-- **`file_examples.py`**: 文件加载和处理演示
-  - 从 JSON 文件加载审核项
-  - 从文件加载文本
-  - 从目录批量加载文本
-  - 加载多个指定文件
-
 ### 批量处理示例
 
 - **`batch_examples.py`**: 批量审核功能演示
   - 多个文本单个审核项
   - 单个文本多个审核项
   - 多个文本多个审核项
-  - 从文件加载进行批量审核
+  - 批量审核错误处理
 
 ### 图像审核示例
 
@@ -33,6 +38,7 @@
   - 单张图片审核（暴力内容检测）
   - 批量图片审核（多张图片、多审核项）
   - 混合审核（文本 + 图片）
+  - 图像安全检测
 
 ### 高级用法示例
 
@@ -44,33 +50,15 @@
   - 元数据使用
   - 批量审核错误处理
 
-### 综合示例
-
-- **`example.py`**: 综合使用演示（位于项目根目录）
-  - 单文本审核
-  - 批量审核
-  - 文件加载
-  - 目录加载
-  - 多审核项处理
-
 ## 数据文件结构
 
 ```text
-data/
-├── items/              # 审核项配置文件
-│   ├── audit_item.json      # 敏感信息检测配置
-│   └── ad_audit_item.json   # 广告内容检测配置
-├── texts/              # 示例文本文件
-│   ├── sample.txt           # 公司介绍文本
-│   ├── advertisement.txt    # 广告内容
-│   ├── blog.md             # 博客文章
-│   └── sample.md           # 系统文档
-└── images/             # 示例图片文件（图像未上传，请手动添加示例图片）
-    ├── monalisa-200x200.jpg  # 蒙娜丽莎图片 (JPEG)
-    ├── monalisa-200x200.png  # 蒙娜丽莎图片 (PNG)
-    ├── monalisa-200x200.tiff # 蒙娜丽莎图片 (TIFF)
-    └── monalisa-200x200.webp # 蒙娜丽莎图片 (WebP)
+examples/data/
+└── monalisa-100x100.jpg  # 蒙娜丽莎示例图片
 ```
+
+**注意**: 由于项目结构更新，示例文件现在使用 `create()` 和 `from_dict()` 方法
+而不是不存在的文件加载方法。如需文件加载功能，请使用现有的数据模拟方法。
 
 ## 运行示例
 
@@ -100,22 +88,16 @@ data/
 
 ```bash
 # 运行基础示例
-python example/basic_examples.py
-
-# 运行文件操作示例
-python example/file_examples.py
+python examples/basic_examples.py
 
 # 运行批量处理示例
-python example/batch_examples.py
+python examples/batch_examples.py
 
 # 运行图像审核示例
-python example/image_examples.py
+python examples/image_examples.py
 
 # 运行高级用法示例
-python example/advanced_examples.py
-
-# 运行综合示例
-python example/example.py
+python examples/advanced_examples.py
 ```
 
 ## 注意事项

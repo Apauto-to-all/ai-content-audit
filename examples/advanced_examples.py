@@ -1,7 +1,11 @@
 """
-高级用法示例
+AI内容审核系统 - 高级用法示例
 
-演示 AuditManager 的高级功能，如错误处理、自定义配置等。
+这个示例展示了如何使用 AI 内容审核系统的高级功能，包括：
+- 自定义审核选项配置
+- 性能对比测试
+- 元数据使用
+- 复杂场景处理
 """
 
 import os
@@ -9,224 +13,377 @@ import sys
 import time
 from dotenv import load_dotenv
 
-# 添加项目根目录到路径
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from ai_content_audit import loader, AuditManager
-from openai import OpenAI
-
-# 加载环境变量
+# 添加项目根目录到Python路径并加载环境变量
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 load_dotenv()
 
-# 配置 OpenAI 客户端
-client = OpenAI(
-    base_url=os.getenv(
+from openai import OpenAI
+from ai_content_audit import AuditManager, loader
+
+
+def setup_environment():
+    """
+    设置环境变量和客户端
+
+    返回:
+        OpenAI: 配置好的 OpenAI 客户端
+    """
+    # 从环境变量获取配置
+    base_url = os.getenv(
         "DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    ),
-    api_key=os.getenv("DASHSCOPE_API_KEY", ""),
-)
-model = os.getenv("DASHSCOPE_MODEL", "qwen-plus-2025-07-28")
+    )
+    api_key = os.getenv("DASHSCOPE_API_KEY")
+
+    if not api_key:
+        raise ValueError("请设置 DASHSCOPE_API_KEY 环境变量")
+
+    # 创建 OpenAI 客户端
+    client = OpenAI(base_url=base_url, api_key=api_key)
+
+    return client
 
 
-def error_handling_example():
-    """错误处理示例"""
-    print("=== 错误处理示例 ===")
+def error_handling_examples():
+    """
+    错误处理机制示例
 
-    # 创建一个无效的客户端来模拟错误
-    invalid_client = OpenAI(
-        base_url="https://invalid-url.com",
-        api_key="invalid-key",
+    演示如何处理各种错误情况
+    """
+    print("=== 错误处理机制示例 ===")
+
+    # 设置环境
+    client = setup_environment()
+
+    # 创建审核管理器
+    audit_manager = AuditManager(client=client)
+
+    # 测试各种错误情况
+    error_cases = [
+        # 空内容
+        {"content": "", "description": "空文本内容"},
+        # 超长内容
+        {"content": "x" * 10000, "description": "超长文本内容"},
+        # 特殊字符
+        {"content": "特殊字符测试：\x00\x01\x02", "description": "包含特殊字符"},
+        # 正常内容
+        {"content": "这是一段正常的文本内容", "description": "正常文本内容"},
+    ]
+
+    # 创建审核项
+    sensitive_item = loader.options_item.create(
+        name="敏感信息检测",
+        instruction="检查文本中是否包含敏感信息",
+        options={"包含": "检测到敏感信息", "不包含": "未检测到敏感信息"},
     )
 
-    audit_manager = AuditManager(client=invalid_client, model=model)
+    for case in error_cases:
+        print(f"\n测试案例: {case['description']}")
 
-    audit_item = loader.options_item.create(
-        name="测试审核项",
-        instruction="测试错误处理。",
-        options={"通过": "审核通过", "失败": "审核失败"},
-    )
+        try:
+            # 创建审核内容
+            audit_content = loader.audit_data.create(
+                content=case["content"], file_type="text"
+            )
 
-    audit_text = loader.audit_data.create(content="测试文本")
+            # 执行审核
+            result = audit_manager.audit_one(
+                content=audit_content, item=sensitive_item, model="qwen-plus"
+            )
 
-    try:
-        result = audit_manager.audit_one(audit_text, audit_item)
-        print(f"审核成功: {result.decision.choice}")
-    except Exception as e:
-        print(f"审核失败: {type(e).__name__}: {e}")
+            print(f"  审核成功: {result.decision.choice}")
+
+        except Exception as e:
+            print(f"  审核失败: {type(e).__name__}: {e}")
 
     print()
 
 
-def custom_model_example():
-    """使用不同模型的示例"""
-    print("=== 自定义模型示例 ===")
+def custom_model_usage():
+    """
+    自定义模型使用示例
 
-    audit_manager = AuditManager(client=client, model="qwen-turbo")
+    演示如何使用不同的模型进行审核
+    """
+    print("=== 自定义模型使用示例 ===")
 
-    audit_item = loader.options_item.create(
-        name="模型测试",
-        instruction="测试不同模型的效果。",
-        options={"有效": "模型响应有效", "无效": "模型响应无效"},
+    # 设置环境
+    client = setup_environment()
+
+    # 创建审核管理器
+    audit_manager = AuditManager(client=client)
+
+    # 测试文本
+    test_text = "这是一段包含电话号码 138-1234-5678 的测试文本"
+
+    # 创建审核项
+    sensitive_item = loader.options_item.create(
+        name="敏感信息检测",
+        instruction="检查文本中是否包含电话号码等敏感信息",
+        options={"包含": "检测到敏感信息", "不包含": "未检测到敏感信息"},
     )
 
-    audit_text = loader.audit_data.create(
-        content="这是一个测试文本，用于验证模型响应。"
-    )
+    # 创建审核内容
+    audit_content = loader.audit_data.create(content=test_text, file_type="text")
 
-    result = audit_manager.audit_one(audit_text, audit_item)
+    # 测试不同的模型
+    models = ["qwen-plus", "qwen-turbo", "qwen-max"]  # 示例模型名称
 
-    print(f"使用模型: qwen-turbo")
-    print(f"决策: {result.decision.choice}")
-    print(f"理由: {result.decision.reason}")
+    for model in models:
+        print(f"\n使用模型: {model}")
+
+        try:
+            start_time = time.time()
+
+            result = audit_manager.audit_one(
+                content=audit_content, item=sensitive_item, model=model
+            )
+
+            end_time = time.time()
+            response_time = end_time - start_time
+
+            print(f"  审核结果: {result.decision.choice}")
+            print(f"  响应时间: {response_time:.2f}秒")
+
+        except Exception as e:
+            print(f"  模型 {model} 审核失败: {e}")
+
     print()
 
 
 def performance_comparison():
-    """性能对比示例"""
-    print("=== 性能对比示例 ===")
+    """
+    性能对比测试示例
 
-    audit_manager = AuditManager(client=client, model=model)
+    演示如何对比不同配置的性能
+    """
+    print("=== 性能对比测试示例 ===")
 
-    audit_item = loader.options_item.create(
-        name="性能测试",
-        instruction="测试审核性能。",
-        options={"完成": "审核完成"},
-    )
+    # 设置环境
+    client = setup_environment()
 
-    # 创建多个测试文本
-    audit_texts = [
-        loader.audit_data.create(
-            content=f"这是测试文本 {i}，用于性能测试。" * 10,  # 较长文本
-        )
-        for i in range(5)
+    # 创建审核管理器
+    audit_manager = AuditManager(client=client)
+
+    # 测试文本列表
+    test_texts = [
+        "短文本测试",
+        "这是一段中等长度的测试文本，用于性能对比",
+        "这是一段较长的测试文本，包含更多的内容和细节，用于测试不同长度文本的处理性能差异",
     ]
 
-    # 单次审核
-    print("单次审核性能:")
-    start_time = time.time()
-    for i, text in enumerate(audit_texts):
-        result = audit_manager.audit_one(text, audit_item)
-        print(
-            f"  文本 {i+1}: {result.decision.choice} ({time.time() - start_time:.2f}s)"
-        )
+    # 创建审核项
+    sensitive_item = loader.options_item.create(
+        name="敏感信息检测",
+        instruction="检查文本中是否包含敏感信息",
+        options={"包含": "检测到敏感信息", "不包含": "未检测到敏感信息"},
+    )
+
+    # 性能测试
+    print("\n单文本审核性能测试:")
+    for i, text in enumerate(test_texts, 1):
+        audit_content = loader.audit_data.create(content=text, file_type="text")
+
         start_time = time.time()
 
-    # 批量审核
-    print("\n批量审核性能:")
-    start_time = time.time()
-    results = audit_manager.audit_batch(audit_texts, [audit_item])
-    batch_time = time.time() - start_time
+        try:
+            result = audit_manager.audit_one(
+                content=audit_content, item=sensitive_item, model="qwen-plus"
+            )
 
-    print(f"批量审核 5 个文本完成时间: {batch_time:.2f}s")
-    print(f"平均每个文本: {batch_time/5:.2f}s")
+            end_time = time.time()
+            response_time = end_time - start_time
+
+            print(
+                f"文本 {i} (长度: {len(text)}): {response_time:.2f}秒 - {result.decision.choice}"
+            )
+
+        except Exception as e:
+            print(f"文本 {i} 审核失败: {e}")
+
+    # 批量审核性能测试
+    print("\n批量审核性能测试:")
+
+    # 创建批量审核内容
+    batch_contents = []
+    for text in test_texts * 2:  # 重复文本以增加批量大小
+        audit_content = loader.audit_data.create(content=text, file_type="text")
+        batch_contents.append(audit_content)
+
+    start_time = time.time()
+
+    try:
+        results = audit_manager.audit_batch(
+            contents=batch_contents, items=[sensitive_item], model="qwen-plus"
+        )
+
+        end_time = time.time()
+        batch_time = end_time - start_time
+
+        print(f"批量审核 {len(batch_contents)} 个文本: {batch_time:.2f}秒")
+        print(f"平均每个文本: {batch_time/len(batch_contents):.2f}秒")
+
+    except Exception as e:
+        print(f"批量审核失败: {e}")
+
     print()
 
 
-def custom_options_example():
-    """自定义选项示例"""
-    print("=== 自定义选项示例 ===")
+def custom_options_configuration():
+    """
+    自定义选项配置示例
 
-    audit_manager = AuditManager(client=client, model=model)
+    演示如何配置复杂的审核选项
+    """
+    print("=== 自定义选项配置示例 ===")
 
-    # 复杂的审核项
-    audit_item = loader.options_item.create(
-        name="详细内容分析",
-        instruction="对内容进行详细的多维度分析。",
-        options={
-            "优秀": "内容优秀，值得推荐",
-            "良好": "内容良好，可以接受",
-            "一般": "内容一般，需要改进",
-            "差": "内容质量差，不建议发布",
-            "违规": "内容违规，必须删除",
+    # 设置环境
+    client = setup_environment()
+
+    # 创建审核管理器
+    audit_manager = AuditManager(client=client)
+
+    # 测试文本
+    test_text = """
+    这是一篇技术博客文章，讨论人工智能在医疗领域的应用。
+    文章介绍了深度学习算法在医学影像分析中的使用，
+    以及自然语言处理在电子病历分析中的应用。
+    """
+
+    # 创建复杂的审核项配置
+    complex_items = [
+        {
+            "name": "内容质量评估",
+            "instruction": "从专业性、结构清晰度、内容深度等方面评估文本质量",
+            "options": {
+                "优秀": "内容专业、结构清晰、深度足够",
+                "良好": "内容基本合格，有一定专业性",
+                "一般": "内容质量一般，需要改进",
+                "较差": "内容质量较差，需要大幅改进",
+            },
         },
-    )
-
-    audit_texts = [
-        loader.audit_data.create(
-            content="这是一篇写得非常好的技术文章，内容详实，结构清晰，值得学习。",
-            source="优质内容",
-        ),
-        loader.audit_data.create(
-            content="垃圾广告！立即购买！",
-            source="违规内容",
-        ),
+        {
+            "name": "技术准确性评估",
+            "instruction": "评估文本中技术内容的准确性和时效性",
+            "options": {
+                "准确": "技术内容准确且时效性好",
+                "基本准确": "技术内容基本准确，有小问题",
+                "不准确": "技术内容存在明显错误",
+                "无法判断": "无法评估技术准确性",
+            },
+        },
+        {
+            "name": "适用性评估",
+            "instruction": "评估文本对不同读者群体的适用性",
+            "options": {
+                "专业读者": "适合专业技术人员阅读",
+                "普通读者": "适合普通读者阅读",
+                "初学者": "适合初学者阅读",
+                "不适用": "内容不清晰，不适合任何读者",
+            },
+        },
     ]
 
-    for text in audit_texts:
-        result = audit_manager.audit_one(text, audit_item)
-        print(f"文本: {text.source}")
-        print(f"  决策: {result.decision.choice}")
-        print(f"  理由: {result.decision.reason}")
-        print()
+    # 创建审核内容
+    audit_content = loader.audit_data.create(content=test_text, file_type="text")
+
+    for item_config in complex_items:
+        # 从配置创建审核项
+        audit_item = loader.options_item.create(
+            name=item_config["name"],
+            instruction=item_config["instruction"],
+            options=item_config["options"],
+        )
+
+        print(f"\n审核项: {item_config['name']}")
+
+        try:
+            result = audit_manager.audit_one(
+                content=audit_content, item=audit_item, model="qwen-plus"
+            )
+
+            print(f"  评估结果: {result.decision.choice}")
+            print(f"  评估说明: {result.decision.reason}")
+
+        except Exception as e:
+            print(f"  审核失败: {e}")
+
+    print()
 
 
-def metadata_usage_example():
-    """元数据使用示例"""
+def metadata_usage_examples():
+    """
+    元数据使用示例
+
+    演示如何使用元数据功能
+    """
     print("=== 元数据使用示例 ===")
 
-    audit_manager = AuditManager(client=client, model=model)
+    # 设置环境
+    client = setup_environment()
 
-    audit_item = loader.options_item.create(
-        name="元数据测试",
-        instruction="测试元数据功能。",
-        options={"成功": "元数据处理成功"},
-    )
+    # 创建审核管理器
+    audit_manager = AuditManager(client=client)
 
-    # 使用元数据
-    audit_text = loader.audit_data.create(
-        content="测试文本",
-        source="测试文件",
+    # 创建带元数据的审核内容
+    metadata_content = loader.audit_data.create(
+        content="这是一段测试文本，包含元数据信息",
+        file_type="text",
         metadata={
-            "author": "测试用户",
-            "category": "测试",
-            "priority": "high",
-            "tags": ["test", "demo"],
+            "source": "测试数据",
+            "author": "AI助手",
+            "timestamp": "2024-12-19",
+            "category": "技术文档",
+            "priority": "高",
         },
     )
 
-    result = audit_manager.audit_one(audit_text, audit_item)
+    # 创建审核项
+    sensitive_item = loader.options_item.create(
+        name="敏感信息检测",
+        instruction="检查文本中是否包含敏感信息",
+        options={"包含": "检测到敏感信息", "不包含": "未检测到敏感信息"},
+    )
 
-    print(f"文本元数据: {audit_text.metadata}")
-    print(f"审核结果ID: {result.id}")
-    print(f"文本ID: {result.text_id}")
-    print(f"审核项ID: {result.item_id}")
+    # 执行审核
+    result = audit_manager.audit_one(
+        content=metadata_content, item=sensitive_item, model="qwen-plus"
+    )
+
+    print("审核内容元数据:")
+    for key, value in metadata_content.metadata.items():
+        print(f"  {key}: {value}")
+
+    print(f"\n审核结果: {result.decision.choice}")
+    print(f"审核说明: {result.decision.reason}")
     print()
 
 
-def batch_error_handling():
-    """批量审核错误处理示例"""
-    print("=== 批量审核错误处理 ===")
+def main():
+    """
+    主函数，运行所有高级用法示例
+    """
+    try:
+        # 错误处理机制
+        error_handling_examples()
 
-    # 创建正常客户端
-    audit_manager = AuditManager(client=client, model=model)
+        # 自定义模型使用
+        custom_model_usage()
 
-    audit_item = loader.options_item.create(
-        name="错误处理测试",
-        instruction="测试批量审核的错误处理。",
-        options={"正常": "处理正常", "错误": "处理错误"},
-    )
+        # 性能对比测试
+        performance_comparison()
 
-    # 包含正常和异常的文本
-    audit_texts = [
-        loader.audit_data.create(content="正常文本1", source="正常1"),
-        loader.audit_data.create(content="正常文本2", source="正常2"),
-        loader.audit_data.create(content="", source="空文本"),  # 可能导致问题
-    ]
+        # 自定义选项配置
+        custom_options_configuration()
 
-    results = audit_manager.audit_batch(audit_texts, [audit_item])
+        # 元数据使用
+        metadata_usage_examples()
 
-    print("批量审核结果（包含错误处理）:")
-    for i, result in enumerate(results, 1):
-        print(f"结果 {i}: {result.text_excerpt}")
-        print(f"  决策: {result.decision.choice}")
-        print(f"  理由: {result.decision.reason}")
-        print()
+        print("=== 所有高级用法示例执行完成 ===")
+
+    except Exception as e:
+        print(f"执行示例时出错: {e}")
+        print("请检查环境变量配置是否正确")
 
 
 if __name__ == "__main__":
-    error_handling_example()
-    custom_model_example()
-    performance_comparison()
-    custom_options_example()
-    metadata_usage_example()
-    batch_error_handling()
+    main()

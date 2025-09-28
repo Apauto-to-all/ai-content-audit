@@ -12,13 +12,13 @@ AI 内容审核系统
 使用示例：
 >>> from openai import OpenAI
 >>> from ai_content_audit import AuditManager, loader, file_loader
->>> 
+>>>
 >>> # 创建 OpenAI 客户端
 >>> client = OpenAI()
->>> 
+>>>
 >>> # 创建审核管理器
 >>> audit_manager = AuditManager(client=client)
->>> 
+>>>
 >>> # 文本审核
 >>> # 加载审核文本
 >>> text_audit_content = loader.audit_data.create(content="待审核文本", file_type="text")
@@ -34,7 +34,7 @@ AI 内容审核系统
 ...     item=text_audit_item,
 ...     model="qwen-plus",
 ... )
->>> 
+>>>
 >>> # 图像审核
 >>> # 加载图像文件，将其转化为大模型图像输入格式
 >>> image_data = file_loader.load_image("path/to/image.jpg")
