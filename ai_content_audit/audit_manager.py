@@ -1,6 +1,12 @@
-from typing import Dict, List, Tuple, Optional, Union
+from typing import List, Optional
+
+# 在模块导入时检查 openai 包是否安装
+try:
+    from openai import OpenAI
+except ImportError:
+    raise ImportError("openai 包未安装，请安装：pip install openai")
+
 from uuid import uuid4
-from openai import OpenAI
 from ai_content_audit.models import (
     AuditOptionsItem,
     AuditDecision,
@@ -20,7 +26,11 @@ class AuditManager:
     - 支持批量审核，提高处理效率。
     """
 
-    def __init__(self, client: OpenAI = None, model: str = None) -> None:
+    def __init__(
+        self,
+        client: Optional["OpenAI"] = None,
+        model: Optional[str] = None,
+    ) -> None:
         """
         初始化审核管理器。
 
@@ -40,7 +50,7 @@ class AuditManager:
         content: AuditContent,
         item: AuditOptionsItem,
         *,
-        client: Optional[OpenAI] = None,
+        client: Optional["OpenAI"] = None,
         model: Optional[str] = None,
     ) -> AuditDecision:
         """
@@ -85,7 +95,7 @@ class AuditManager:
         content: AuditContent,
         item: AuditOptionsItem,
         *,
-        client: Optional[OpenAI] = None,
+        client: Optional["OpenAI"] = None,
         model: Optional[str] = None,
     ) -> AuditResult:
         """
@@ -144,7 +154,7 @@ class AuditManager:
         content: List[AuditContent],
         items: List[AuditOptionsItem],
         *,
-        client: Optional[OpenAI] = None,
+        client: Optional["OpenAI"] = None,
         model: Optional[str] = None,
     ) -> List[AuditResult]:
         """

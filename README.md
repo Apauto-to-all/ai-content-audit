@@ -26,12 +26,6 @@ cd ai-content-audit
 安装依赖包：
 
 ```bash
-pip install openai pydantic filetype python-dotenv
-```
-
-或使用 uv：
-
-```bash
 uv sync
 ```
 
