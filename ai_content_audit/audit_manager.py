@@ -16,7 +16,7 @@ class AuditManager:
     审核管理器
 
     职责：
-    - 管理与大模型的交互（持有 client 与默认 model）。
+    - 管理与大模型的交互，调用模型生成审核决策。
     - 将审核项与审核文本组装为消息，调用模型生成结构化结果（AuditDecision）。
     - 支持批量审核，提高处理效率。
     """
@@ -146,7 +146,7 @@ class AuditManager:
 
     def audit_batch(
         self,
-        content: List[AuditContent],
+        contents: List[AuditContent],
         items: List[AuditOptionsItem],
         *,
         client: Optional[OpenAI] = None,
@@ -156,7 +156,7 @@ class AuditManager:
         批量审核：对多个内容依次应用多个审核项。
 
         参数：
-        - content (List[AuditContent]): 待审核内容列表，每个内容将应用所有审核项。
+        - contents (List[AuditContent]): 待审核内容列表，每个内容将应用所有审核项。
         - items (List[AuditOptionsItem]): 审核项列表，对每个内容依次应用。
         - client (Optional[OpenAI]): 可选覆盖客户端。
         - model (Optional[str]): 可选覆盖模型。
@@ -196,7 +196,7 @@ class AuditManager:
         batch_id = uuid4()
         results: List[AuditResult] = []
 
-        for c in content:
+        for c in contents:
             for it in items:
                 try:
                     decision = self._audit_content_with_item(

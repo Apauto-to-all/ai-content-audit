@@ -8,9 +8,8 @@ class AuditContentLoader:
     待审核内容数据加载器：用于加载待审核的内容。
 
     功能
-    - 支持从字符串直接创建。
-    - 支持从目录批量加载待审核文件。
-    - 可自定义读取编码，默认 utf-8。
+    - 支持从字符串直接创建待审核内容。
+    - 支持从字典数据加载待审核内容。
 
     使用方法：
     - 创建内容：使用 create() 方法直接创建。
@@ -37,9 +36,17 @@ class AuditContentLoader:
 
         示例：
         >>> from ai_content_audit import loader
-        >>> audit_content = loader.audit_data.create(
+        >>> # 创建文本待审核内容
+        >>> audit_content_text = loader.audit_data.create(
         ...     content="这是一个示例文本，用于演示审核功能。",
         ...     file_type="text",
+        ... )
+        >>> # 创建图像待审核内容
+        >>> # 加载图像文件，将其转化为待审核图像数据
+        >>> image_data = file_loader.load_image("path/to/image.jpg")
+        >>> audit_content_image = loader.audit_data.create(
+        ...     content=image_data,
+        ...     file_type="image",
         ... )
         """
         return AuditContent(content=content, file_type=file_type, metadata=metadata)
@@ -64,11 +71,20 @@ class AuditContentLoader:
 
         示例：
         >>> from ai_content_audit import loader
+        >>> # 创建文本待审核内容
         >>> data = {
         ...     "content": "这是一个示例文本，用于演示审核功能。",
         ...     "file_type": "text",
         ... }
-        >>> audit_content = loader.audit_data.from_dict(data)
+        >>> audit_content_text = loader.audit_data.from_dict(data)
+        >>> # 创建图像待审核内容
+        >>> # 加载图像文件，将其转化为待审核图像数据
+        >>> image_data = file_loader.load_image("path/to/image.jpg")
+        >>> data = {
+        ...     "content": image_data,
+        ...     "file_type": "image",
+        ... }
+        >>> audit_content_image = loader.audit_data.from_dict(data)
         """
         try:
             meta = data.get("metadata")
