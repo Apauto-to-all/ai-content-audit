@@ -15,7 +15,7 @@ AI 内容审核系统
 >>> # 创建审核管理器
 >>> audit_manager = AuditManager(client=client, model="qwen-plus")
 >>> # 加载审核文本
->>> audit_text = loader.audit_data.create(content="待审核文本", source="来源")
+>>> audit_text = loader.audit_data.create(content="待审核文本")
 >>> # 加载审核项
 >>> audit_item = loader.options_item.create(
 ...     name="审核项名称",

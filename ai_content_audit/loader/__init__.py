@@ -6,7 +6,6 @@ AI内容审核数据加载器模块。
 以及 `options_item` 加载审核选项项。
 """
 
-from __future__ import annotations
 from ai_content_audit.loader.data_loader import AuditContentLoader as audit_data
 from ai_content_audit.loader.checks_loader import AuditOptionsItemLoader as options_item
 

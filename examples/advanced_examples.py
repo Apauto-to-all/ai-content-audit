@@ -46,10 +46,7 @@ def error_handling_example():
         options={"通过": "审核通过", "失败": "审核失败"},
     )
 
-    audit_text = loader.audit_data.create(
-        content="测试文本",
-        source="测试",
-    )
+    audit_text = loader.audit_data.create(content="测试文本")
 
     try:
         result = audit_manager.audit_one(audit_text, audit_item)
@@ -73,8 +70,7 @@ def custom_model_example():
     )
 
     audit_text = loader.audit_data.create(
-        content="这是一个测试文本，用于验证模型响应。",
-        source="模型测试",
+        content="这是一个测试文本，用于验证模型响应。"
     )
 
     result = audit_manager.audit_one(audit_text, audit_item)
@@ -101,7 +97,6 @@ def performance_comparison():
     audit_texts = [
         loader.audit_data.create(
             content=f"这是测试文本 {i}，用于性能测试。" * 10,  # 较长文本
-            source=f"测试文本{i}",
         )
         for i in range(5)
     ]
