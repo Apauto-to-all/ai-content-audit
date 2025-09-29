@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator
 from ai_content_audit.models.audit_decision_model import AuditDecision
 from uuid import UUID, uuid4
 
@@ -18,14 +18,13 @@ class AuditResult(BaseModel):
     text_id: UUID = Field(..., description="对应的文本ID")
     item_id: UUID = Field(..., description="对应的审核项ID")
     item_name: str = Field(..., description="审核项名称（冗余，便于展示）")
-    text_excerpt: str = Field(..., description="审核文本的节选（前100字符），用于展示")
+    text_excerpt: str = Field(default="", description="自动生成的文本节选（前100字符）")
     decision: AuditDecision = Field(
         ..., description="审核决策（包含 choice 和 reason）"
     )
 
-    @model_validator(mode="after")
-    def _set_text_excerpt(self) -> "AuditResult":
-        """自动生成文本节选（前100字符）"""
-        if self.text_excerpt:
-            self.text_excerpt = self.text_excerpt[:100]
-        return self
+    @field_validator("text_excerpt")
+    @classmethod
+    def validate_text_excerpt(cls, v: str) -> str:
+        """验证并截断文本节选"""
+        return v[:100] if v else ""

@@ -27,7 +27,7 @@ class AuditContentLoader:
         直接创建一个 AuditContent 对象。
 
         参数
-        - content (str): 必需，内容，如果是图片则
+        - content (str): 必需，内容，如果是图片则为 base64 编码字符串。
         - file_type (Literal["text", "image"]): 文件类型，默认为 "text"。
         - metadata (Optional[Dict[str, Any]]): 可选，附加元信息。
 
