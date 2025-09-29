@@ -100,17 +100,17 @@ class TestAuditResultModel:
         decision = AuditDecision(choice="是", reason="测试原因")
 
         result = AuditResult(
-            text_id=content.id,
+            content_id=content.id,
             item_id=item.id,
             item_name=item.name,
-            text_excerpt=content.content,
+            content_excerpt=content.content,
             decision=decision,
         )
 
-        assert result.text_id == content.id
+        assert result.content_id == content.id
         assert result.item_id == item.id
         assert result.item_name == item.name
-        assert result.text_excerpt == content.content
+        assert result.content_excerpt == content.content
         assert result.decision == decision
         assert result.batch_id is None
 
@@ -121,10 +121,10 @@ class TestAuditResultModel:
         batch_id = uuid4()
         result = AuditResult(
             batch_id=batch_id,
-            text_id=uuid4(),
+            content_id=uuid4(),
             item_id=uuid4(),
             item_name="测试项",
-            text_excerpt="测试文本",
+            content_excerpt="测试文本",
             decision=AuditDecision(choice="测试", reason="测试原因"),
         )
 
@@ -137,7 +137,7 @@ class TestAuditResultModel:
         # 测试缺少必需字段
         with pytest.raises(ValueError):
             AuditResult(
-                text_id=uuid4(),
+                content_id=uuid4(),
                 item_id=uuid4(),
                 # 缺少其他必需字段
             )
@@ -171,15 +171,15 @@ class TestModelIntegration:
         )
 
         result = AuditResult(
-            text_id=content.id,
+            content_id=content.id,
             item_id=item.id,
             item_name=item.name,
-            text_excerpt=content.content[:50] + "...",  # 截取前50字符
+            content_excerpt=content.content[:50] + "...",  # 截取前50字符
             decision=decision,
         )
 
         # 验证数据一致性
-        assert result.text_id == content.id
+        assert result.content_id == content.id
         assert result.item_id == item.id
         assert result.item_name == item.name
         assert result.decision.choice in item.options

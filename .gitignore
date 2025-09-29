@@ -208,3 +208,6 @@ __marimo__/
 
 # 排除测试数据文件夹
 examples/data/
+
+# 排除功能测试文件夹
+my-test/

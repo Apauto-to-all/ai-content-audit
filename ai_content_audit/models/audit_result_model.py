@@ -15,16 +15,18 @@ class AuditResult(BaseModel):
     batch_id: Optional[UUID] = Field(
         None, description="批次ID（同一批次审核共用，便于分组和追踪）"
     )
-    text_id: UUID = Field(..., description="对应的文本ID")
+    content_id: UUID = Field(..., description="对应的内容ID")
     item_id: UUID = Field(..., description="对应的审核项ID")
     item_name: str = Field(..., description="审核项名称（冗余，便于展示）")
-    text_excerpt: str = Field(default="", description="自动生成的文本节选（前100字符）")
+    content_excerpt: str = Field(
+        default="", description="自动生成的内容节选（前100字符）"
+    )
     decision: AuditDecision = Field(
         ..., description="审核决策（包含 choice 和 reason）"
     )
 
-    @field_validator("text_excerpt")
+    @field_validator("content_excerpt")
     @classmethod
-    def validate_text_excerpt(cls, v: str) -> str:
-        """验证并截断文本节选"""
+    def validate_content_excerpt(cls, v: str) -> str:
+        """验证并截断内容节选"""
         return v[:100] if v else ""

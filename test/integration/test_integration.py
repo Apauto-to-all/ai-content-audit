@@ -51,10 +51,10 @@ class TestIntegration:
         result = manager.audit_one(content, item)
 
         # 4. 验证结果
-        assert result.text_id == content.id
+        assert result.content_id == content.id
         assert result.item_id == item.id
         assert result.item_name == item.name
-        assert result.text_excerpt == content.content
+        assert result.content_excerpt == content.content
         assert result.decision.choice == "无"
         assert result.decision.reason == "内容正常，未发现敏感信息"
 
@@ -111,7 +111,7 @@ class TestIntegration:
 
         # 验证每个结果的结构
         for result in results:
-            assert result.text_id in [c.id for c in contents]
+            assert result.content_id in [c.id for c in contents]
             assert result.item_id in [i.id for i in items]
             assert result.decision.choice == "通过"
 
@@ -219,15 +219,16 @@ class TestIntegration:
 
         manager = AuditManager(client=mock_openai_client, model="test-model")
 
-        # 单次审核应该抛出异常
-        with pytest.raises(Exception):
-            manager.audit_one(content, item)
+        # 单次审核应该使用回退机制（不抛出异常）
+        result = manager.audit_one(content, item)
+        assert result.decision.choice == "ERROR"
+        assert result.decision.reason.startswith("审核出现错误：")
 
         # 批量审核应该使用回退机制
         results = manager.audit_batch([content], [item])
         assert len(results) == 1
-        assert results[0].decision.choice == "Error"
-        assert results[0].decision.reason == "模型调用失败"
+        assert results[0].decision.choice == "ERROR"
+        assert results[0].decision.reason.startswith("审核出现错误：")
 
     def test_performance_with_large_batch(self, mock_openai_client, mocker):
         """测试大批量处理的性能"""

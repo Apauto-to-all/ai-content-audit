@@ -44,7 +44,7 @@ class TestAuditManager:
 
         # 验证结果
         assert result.decision == mock_decision
-        assert result.text_id == sample_audit_content.id
+        assert result.content_id == sample_audit_content.id
         assert result.item_id == sample_audit_item.id
 
         # 验证API调用
@@ -166,8 +166,8 @@ class TestAuditManager:
         assert results[0].decision.reason == "成功"
 
         # 验证第二个结果失败（应该返回错误决策）
-        assert results[1].decision.choice == "Error"
-        assert results[1].decision.reason == "模型调用失败"
+        assert results[1].decision.choice == "ERROR"
+        assert results[1].decision.reason.startswith("审核出现错误：")
 
     def test_audit_batch_empty_inputs(
         self, mock_openai_client, sample_audit_content, sample_audit_item
